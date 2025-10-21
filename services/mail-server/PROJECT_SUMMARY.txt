@@ -1,0 +1,237 @@
+================================================================================
+                    MAZZLABS MAIL SERVER - PROJECT SUMMARY
+================================================================================
+
+PROJECT OVERVIEW:
+-----------------
+Complete self-hosted email server for @mazzlabs.works domain with modern web UI.
+Designed for deployment on Azure VM with DNS managed by Cloudflare.
+
+TECH STACK:
+-----------
+Backend:
+  • Node.js + Express (REST API)
+  • smtp-server (SMTP email handling)
+  • better-sqlite3 (Email & user storage)
+  • JWT authentication
+  • bcrypt password hashing
+  • nodemailer (Email sending)
+
+Frontend:
+  • React 19
+  • Vite build tool
+  • React Router (navigation)
+  • Axios (API calls)
+  • Lucide Icons
+  • date-fns (date formatting)
+
+FEATURES:
+---------
+✓ Full SMTP server (send/receive emails)
+✓ IMAP support for email retrieval
+✓ Modern web UI for email management
+✓ Multi-user support
+✓ Secure authentication (JWT + bcrypt)
+✓ SSL/TLS support
+✓ Multiple mailboxes (Inbox, Sent, Drafts, Trash, Spam)
+✓ Email search functionality
+✓ Attachments support
+✓ Flag/unflag emails
+✓ Mark as read/unread
+✓ Email composition
+✓ User registration
+✓ Storage quota tracking
+
+PROJECT STRUCTURE:
+------------------
+mail-server/
+├── src/
+│   ├── index.js                    # Main entry point
+│   ├── database/
+│   │   ├── schema.js              # DB initialization & tables
+│   │   ├── users.js               # User management logic
+│   │   └── emails.js              # Email CRUD operations
+│   ├── smtp/
+│   │   └── server.js              # SMTP server implementation
+│   └── api/
+│       └── server.js              # REST API endpoints
+│
+├── client/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Login.jsx          # Login page
+│   │   │   ├── Register.jsx       # Registration page
+│   │   │   ├── Dashboard.jsx      # Main dashboard
+│   │   │   ├── Sidebar.jsx        # Navigation sidebar
+│   │   │   ├── EmailList.jsx      # Email list view
+│   │   │   ├── EmailView.jsx      # Single email view
+│   │   │   ├── Compose.jsx        # Compose new email
+│   │   │   └── *.css              # Component styles
+│   │   ├── utils/
+│   │   │   └── api.js             # API client utilities
+│   │   ├── App.jsx                # Main app component
+│   │   └── main.jsx               # React entry point
+│   └── vite.config.js             # Vite configuration
+│
+├── Documentation:
+│   ├── README.md                   # Main documentation
+│   ├── QUICK_START.md              # Quick start guide
+│   ├── AZURE_DEPLOYMENT.md         # Azure deployment guide
+│   ├── CLOUDFLARE_DNS.md           # DNS configuration guide
+│   ├── SSL_SETUP.md                # SSL certificate setup
+│   └── DEPLOYMENT_CHECKLIST.md     # Deployment checklist
+│
+├── Scripts:
+│   ├── install.sh                  # Installation script
+│   ├── deploy-to-azure.sh          # Automated Azure deployment
+│   └── mazzlabs-mail.service       # Systemd service file
+│
+└── Configuration:
+    ├── package.json                # Backend dependencies
+    ├── .env.example                # Environment variables template
+    └── .gitignore                  # Git ignore rules
+
+DEPLOYMENT ARCHITECTURE:
+------------------------
+Internet
+    ↓
+Cloudflare DNS (mazzlabs.works)
+    ↓
+Azure VM (mail.mazzlabs.works)
+    ├── SMTP Server (Port 25, 465, 587)
+    ├── IMAP Server (Port 993)
+    ├── REST API (Port 3000)
+    ├── Web UI (React SPA)
+    └── SQLite Database
+
+PORTS:
+------
+25   - SMTP (incoming mail)
+465  - SMTP SSL (secure sending)
+587  - SMTP Submission (with STARTTLS)
+993  - IMAP SSL (email retrieval)
+3000 - Web UI & REST API
+
+DNS CONFIGURATION (Cloudflare):
+-------------------------------
+mail.mazzlabs.works    A      <AZURE_VM_IP>        (DNS only, no proxy)
+@                      MX     10 mail.mazzlabs.works
+@                      TXT    v=spf1 ip4:<IP> mx ~all
+_dmarc                 TXT    v=DMARC1; p=quarantine; rua=mailto:admin@mazzlabs.works
+
+DEPLOYMENT STEPS:
+-----------------
+1. Create Azure VM (Ubuntu 22.04, Standard_B2s)
+2. Configure NSG (open required ports)
+3. Configure DNS in Cloudflare
+4. SSH into VM
+5. Upload code
+6. Run: bash deploy-to-azure.sh
+7. Access web UI and test
+
+QUICK COMMANDS:
+---------------
+# Start server
+sudo systemctl start mazzlabs-mail
+
+# Stop server
+sudo systemctl stop mazzlabs-mail
+
+# View logs
+sudo journalctl -u mazzlabs-mail -f
+
+# Test SMTP
+telnet mail.mazzlabs.works 25
+
+# Check DNS
+dig MX mazzlabs.works
+dig A mail.mazzlabs.works
+
+DEFAULT CREDENTIALS:
+--------------------
+Email: admin@mazzlabs.works
+Password: Set during deployment (change from default: changeme123)
+
+API ENDPOINTS:
+--------------
+POST   /api/auth/login              # User login
+POST   /api/auth/register           # Register new user
+GET    /api/users/me                # Get current user
+GET    /api/mailboxes               # Get all mailboxes
+GET    /api/emails                  # List emails
+GET    /api/emails/:id              # Get single email
+POST   /api/emails/send             # Send email
+PUT    /api/emails/:id/read         # Mark as read
+DELETE /api/emails/:id              # Delete email
+GET    /api/emails/search           # Search emails
+
+SECURITY FEATURES:
+------------------
+✓ JWT token authentication
+✓ Bcrypt password hashing
+✓ SSL/TLS encryption
+✓ CORS protection
+✓ Helmet.js security headers
+✓ Rate limiting ready
+✓ Firewall configuration
+✓ Secure password requirements
+
+BACKUP & RECOVERY:
+------------------
+Database: /opt/mazzlabs-mail/data/mail.db
+Emails: Stored in database
+Automated backups: Daily at 2 AM (if configured)
+Backup location: /opt/backups/mail/
+
+MONITORING:
+-----------
+Logs: sudo journalctl -u mazzlabs-mail -f
+Status: sudo systemctl status mazzlabs-mail
+Health: curl http://localhost:3000/health
+
+COST ESTIMATE (Azure):
+----------------------
+VM (B2s):        ~$35/month
+Static IP:       ~$3/month
+Storage (64GB):  ~$5/month
+Total:           ~$43/month
+
+FUTURE ENHANCEMENTS:
+--------------------
+- DKIM email signing
+- Email filtering/spam detection
+- Calendar integration
+- Mobile app
+- Multi-domain support
+- Admin dashboard
+- Email templates
+- Automated Azure Blob backups
+
+NOTES:
+------
+• Domain: mazzlabs.works (email addresses: user@mazzlabs.works)
+• Mail server hostname: mail.mazzlabs.works
+• Only @mazzlabs.works emails allowed for registration
+• SQLite database (can upgrade to PostgreSQL for scale)
+• Designed for Azure but works on any Ubuntu 22.04 server
+
+TESTING CHECKLIST:
+------------------
+□ Web UI accessible
+□ User can login
+□ Can send email to external address
+□ Can receive email from external address
+□ Email appears in inbox
+□ SMTP connection works
+□ SSL/TLS certificates valid
+□ DNS records propagated
+
+SUPPORT:
+--------
+Documentation: See README.md and guides in docs/
+Logs: sudo journalctl -u mazzlabs-mail -f
+Test email deliverability: https://www.mail-tester.com/
+
+================================================================================
+                              END OF SUMMARY
+================================================================================

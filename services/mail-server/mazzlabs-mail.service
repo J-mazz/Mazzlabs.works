@@ -1,0 +1,26 @@
+[Unit]
+Description=MazzLabs Mail Server
+Documentation=https://github.com/your-repo/mail-server
+After=network.target
+
+[Service]
+Type=simple
+User=azureuser
+Group=azureuser
+WorkingDirectory=/opt/mazzlabs-mail
+ExecStart=/usr/bin/node /opt/mazzlabs-mail/src/index.js
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=mazzlabs-mail
+Environment=NODE_ENV=production
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/mazzlabs-mail/data
+
+[Install]
+WantedBy=multi-user.target
