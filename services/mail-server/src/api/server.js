@@ -3,6 +3,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export class APIServer {
   constructor(emailManager, userManager, config) {
@@ -16,9 +21,15 @@ export class APIServer {
   }
 
   setupMiddleware() {
-    this.app.use(helmet());
+    this.app.use(helmet({
+      contentSecurityPolicy: false
+    }));
     this.app.use(cors());
     this.app.use(express.json());
+
+    // Serve static files from client/dist
+    const clientPath = path.join(__dirname, '../../client/dist');
+    this.app.use(express.static(clientPath));
   }
 
   setupRoutes() {
@@ -51,6 +62,12 @@ export class APIServer {
     // Health check
     this.app.get('/health', (req, res) => {
       res.json({ status: 'ok', service: 'mazzlabs-mail-server' });
+    });
+
+    // Serve React app for all non-API routes
+    this.app.get('*', (req, res) => {
+      const clientPath = path.join(__dirname, '../../client/dist/index.html');
+      res.sendFile(clientPath);
     });
   }
 
