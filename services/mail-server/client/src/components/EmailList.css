@@ -2,12 +2,12 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: white;
+  background: #242424;
 }
 
 .email-list-header {
   padding: 20px 30px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #3a3a3a;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -24,12 +24,12 @@
 .email-list-title h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #e0e0e0;
   margin: 0;
 }
 
 .email-count {
-  color: #666;
+  color: #999;
   font-size: 14px;
 }
 
@@ -44,15 +44,18 @@
 .search-input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid #444;
   border-radius: 6px;
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
+  background: #2a2a2a;
+  color: #e0e0e0;
 }
 
 .search-input:focus {
   border-color: #667eea;
+  background: #2e2e2e;
 }
 
 .search-btn {
@@ -87,7 +90,7 @@
 .email-item {
   display: flex;
   padding: 16px 30px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #2e2e2e;
   cursor: pointer;
   transition: background 0.2s;
   gap: 16px;
@@ -95,19 +98,19 @@
 }
 
 .email-item:hover {
-  background: #f9f9f9;
+  background: #2a2a2a;
 }
 
 .email-item.unread {
-  background: #f0f4ff;
+  background: #2d2d3d;
 }
 
 .email-item.unread:hover {
-  background: #e8f0ff;
+  background: #323242;
 }
 
 .email-item-icon {
-  color: #666;
+  color: #888;
   margin-top: 2px;
 }
 
@@ -129,21 +132,21 @@
 
 .email-from {
   font-weight: 600;
-  color: #1a1a1a;
+  color: #e0e0e0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .email-date {
-  color: #666;
+  color: #999;
   font-size: 13px;
   white-space: nowrap;
 }
 
 .email-subject {
   font-weight: 500;
-  color: #1a1a1a;
+  color: #d0d0d0;
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -152,10 +155,11 @@
 
 .email-item.unread .email-subject {
   font-weight: 700;
+  color: #e8e8e8;
 }
 
 .email-preview {
-  color: #666;
+  color: #888;
   font-size: 14px;
   white-space: nowrap;
   overflow: hidden;
@@ -174,9 +178,10 @@
   justify-content: center;
   flex-direction: column;
   gap: 16px;
-  color: #666;
+  color: #888;
+  background: #242424;
 }
 
 .email-list-empty {
-  color: #999;
+  color: #666;
 }

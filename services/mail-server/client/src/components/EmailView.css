@@ -2,12 +2,12 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: white;
+  background: #242424;
 }
 
 .email-view-toolbar {
   padding: 16px 30px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #3a3a3a;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -20,26 +20,28 @@
 }
 
 .toolbar-btn {
-  background: #f5f5f5;
-  border: none;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
   padding: 10px 16px;
   border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #333;
+  color: #d0d0d0;
   font-size: 14px;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .toolbar-btn:hover {
-  background: #e0e0e0;
+  background: #333;
+  border-color: #444;
 }
 
 .toolbar-btn.danger:hover {
-  background: #fee;
-  color: #c33;
+  background: #3a2222;
+  color: #ff6b6b;
+  border-color: #662222;
 }
 
 .email-view-content {
@@ -55,7 +57,7 @@
 .email-view-subject {
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #e8e8e8;
   margin-bottom: 16px;
 }
 
@@ -64,26 +66,28 @@
   flex-direction: column;
   gap: 8px;
   font-size: 14px;
-  color: #666;
+  color: #999;
 }
 
 .email-view-meta strong {
-  color: #333;
+  color: #ccc;
   margin-right: 8px;
 }
 
 .email-view-body {
-  background: #f9f9f9;
+  background: #1e1e1e;
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 20px;
+  border: 1px solid #3a3a3a;
 }
 
 .email-html-frame {
   width: 100%;
   min-height: 400px;
   border: none;
-  background: white;
+  background: #2a2a2a;
+  border-radius: 4px;
 }
 
 .email-text-body {
@@ -92,7 +96,7 @@
   font-family: inherit;
   font-size: 14px;
   line-height: 1.6;
-  color: #333;
+  color: #d0d0d0;
   margin: 0;
 }
 
@@ -103,15 +107,17 @@
 .email-attachments h3 {
   font-size: 16px;
   margin-bottom: 12px;
-  color: #333;
+  color: #d0d0d0;
 }
 
 .attachment-item {
-  background: #f5f5f5;
+  background: #2a2a2a;
   padding: 12px 16px;
   border-radius: 6px;
   margin-bottom: 8px;
   font-size: 14px;
+  color: #ccc;
+  border: 1px solid #3a3a3a;
 }
 
 .email-view-loading,
@@ -120,5 +126,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: #888;
+  background: #242424;
 }
