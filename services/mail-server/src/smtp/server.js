@@ -86,6 +86,9 @@ export class MailSMTPServer {
         outgoingOptions.secure = true;
         outgoingOptions.key = fs.readFileSync(this.config.tlsKey);
         outgoingOptions.cert = fs.readFileSync(this.config.tlsCert);
+        // Relaxed TLS options for better client compatibility
+        outgoingOptions.minVersion = 'TLSv1.2';
+        outgoingOptions.ciphers = 'HIGH:!aNULL:!MD5';
       } catch (err) {
         console.warn('TLS certificates not found, running without TLS on outgoing server');
       }
