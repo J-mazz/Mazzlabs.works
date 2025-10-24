@@ -2,6 +2,7 @@ import { SMTPServer } from 'smtp-server';
 import { simpleParser } from 'mailparser';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
+import spamFilter from '../utils/spamFilter.js';
 
 export class MailSMTPServer {
   constructor(emailManager, userManager, config) {
@@ -168,6 +169,20 @@ export class MailSMTPServer {
                 size: emailBuffer.length,
                 mailbox: 'INBOX'
               };
+
+              // Run spam detection
+              const spamAnalysis = spamFilter.analyzeEmail({
+                from_address: emailData.from,
+                subject: emailData.subject,
+                body_text: emailData.text,
+                body_html: emailData.html
+              });
+
+              // Route to Spam folder if detected as spam
+              if (spamAnalysis.isSpam) {
+                emailData.mailbox = 'Spam';
+                console.log(`Spam detected (score: ${spamAnalysis.score}): ${emailData.subject}`);
+              }
 
               this.emailManager.saveEmail(user.id, emailData);
               this.userManager.updateStorageUsed(user.id, emailBuffer.length);
