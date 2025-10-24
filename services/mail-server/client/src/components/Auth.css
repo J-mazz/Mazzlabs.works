@@ -3,17 +3,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #1a1a1a;
   padding: 20px;
+  position: relative;
+  overflow: hidden;
 }
 
 .auth-card {
-  background: white;
+  background: #242424;
   border-radius: 12px;
   padding: 40px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid #3a3a3a;
+  position: relative;
+  z-index: 1;
 }
 
 .auth-header {
@@ -29,23 +34,23 @@
 .auth-header h1 {
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #e8e8e8;
   margin-bottom: 8px;
 }
 
 .auth-header p {
-  color: #666;
+  color: #999;
   font-size: 14px;
 }
 
 .auth-error {
-  background: #fee;
-  color: #c33;
+  background: #3a2222;
+  color: #ff6b6b;
   padding: 12px;
   border-radius: 6px;
   margin-bottom: 20px;
   font-size: 14px;
-  border: 1px solid #fcc;
+  border: 1px solid #662222;
 }
 
 .auth-form {
@@ -62,26 +67,29 @@
 
 .form-group label {
   font-weight: 500;
-  color: #333;
+  color: #ccc;
   font-size: 14px;
 }
 
 .form-group input {
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid #444;
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.2s;
+  background: #2a2a2a;
+  color: #e0e0e0;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  background: #2e2e2e;
 }
 
 .form-group small {
-  color: #666;
+  color: #999;
   font-size: 12px;
 }
 
@@ -110,7 +118,7 @@
 .auth-footer {
   text-align: center;
   margin-top: 20px;
-  color: #666;
+  color: #999;
   font-size: 14px;
 }
 
@@ -122,4 +130,12 @@
 
 .auth-footer a:hover {
   text-decoration: underline;
+}
+
+/* Animated background particles */
+.auth-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  pointer-events: none;
 }
