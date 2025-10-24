@@ -8,3 +8,46 @@
   flex: 1;
   overflow: hidden;
 }
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .dashboard {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100% !important;
+    height: auto;
+    max-height: 60vh;
+    padding: 12px !important;
+  }
+
+  .mailboxes {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .mailbox-item {
+    white-space: nowrap;
+  }
+
+  .email-list-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .email-search-bar {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .compose-modal,
+  .settings-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0 !important;
+  }
+}

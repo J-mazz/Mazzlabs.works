@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getEmail, markAsRead, deleteEmail, flagEmail, unflagEmail } from '../utils/api';
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowLeft, Trash2, Star, StarOff } from 'lucide-react';
+import { ArrowLeft, Trash2, Star, StarOff, Reply, Forward } from 'lucide-react';
 import './EmailView.css';
 
-export default function EmailView({ onRefresh }) {
+export default function EmailView({ onRefresh, onReply, onForward }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [email, setEmail] = useState(null);
@@ -58,6 +58,27 @@ export default function EmailView({ onRefresh }) {
     }
   };
 
+  const handleReply = () => {
+    const quotedBody = email.body_text
+      .split('\n')
+      .map(line => `> ${line}`)
+      .join('\n');
+
+    onReply({
+      to: email.from_address,
+      subject: email.subject?.startsWith('Re: ') ? email.subject : `Re: ${email.subject || '(No Subject)'}`,
+      body: `\n\n\nOn ${new Date(email.received_at).toLocaleString()}, ${email.from_address} wrote:\n${quotedBody}`
+    });
+  };
+
+  const handleForward = () => {
+    onForward({
+      to: '',
+      subject: email.subject?.startsWith('Fwd: ') ? email.subject : `Fwd: ${email.subject || '(No Subject)'}`,
+      body: `\n\n\n---------- Forwarded message ---------\nFrom: ${email.from_address}\nDate: ${new Date(email.received_at).toLocaleString()}\nSubject: ${email.subject || '(No Subject)'}\nTo: ${email.to_address}\n\n${email.body_text}`
+    });
+  };
+
   if (loading) {
     return <div className="email-view-loading">Loading...</div>;
   }
@@ -75,6 +96,14 @@ export default function EmailView({ onRefresh }) {
         </button>
 
         <div className="toolbar-actions">
+          <button onClick={handleReply} className="toolbar-btn">
+            <Reply size={18} />
+            Reply
+          </button>
+          <button onClick={handleForward} className="toolbar-btn">
+            <Forward size={18} />
+            Forward
+          </button>
           <button onClick={handleFlag} className="toolbar-btn">
             {email.is_flagged ? <StarOff size={18} /> : <Star size={18} />}
           </button>

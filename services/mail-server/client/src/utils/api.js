@@ -27,6 +27,14 @@ export const getCurrentUser = async () => {
   return response.data;
 };
 
+export const changePassword = async (currentPassword, newPassword) => {
+  const response = await api.post('/users/change-password', {
+    currentPassword,
+    newPassword
+  });
+  return response.data;
+};
+
 export const getMailboxes = async () => {
   const response = await api.get('/mailboxes');
   return response.data;

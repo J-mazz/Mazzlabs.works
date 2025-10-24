@@ -11,17 +11,72 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-.email-list-header h2 {
+.email-list-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.email-list-title h2 {
   font-size: 24px;
   font-weight: 700;
   color: #1a1a1a;
+  margin: 0;
 }
 
 .email-count {
   color: #666;
   font-size: 14px;
+}
+
+.email-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: #667eea;
+}
+
+.search-btn {
+  padding: 8px 12px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.search-btn:hover {
+  background: #5568d3;
+}
+
+.search-btn.clear {
+  background: #666;
+}
+
+.search-btn.clear:hover {
+  background: #555;
 }
 
 .email-list-items {

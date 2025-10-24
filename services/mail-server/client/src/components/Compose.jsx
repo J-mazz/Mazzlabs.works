@@ -3,31 +3,32 @@ import { sendEmail } from '../utils/api';
 import { X, Send } from 'lucide-react';
 import './Compose.css';
 
-export default function Compose({ user, onClose, onSent }) {
-  const [to, setTo] = useState('');
-  const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
-  const [password, setPassword] = useState('');
+export default function Compose({ user, onClose, onSent, initialData = {} }) {
+  const [to, setTo] = useState(initialData.to || '');
+  const [subject, setSubject] = useState(initialData.subject || '');
+  const [body, setBody] = useState(initialData.body || '');
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (!password) {
-      setError('Password required to send email');
-      return;
-    }
-
     setSending(true);
 
     try {
-      await sendEmail({ to, subject, text: body, password });
+      await sendEmail({ to, subject, text: body });
       onSent();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to send email');
       setSending(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    // Ctrl+Enter or Cmd+Enter to send
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit(e);
     }
   };
 
@@ -72,23 +73,13 @@ export default function Compose({ user, onClose, onSent }) {
           </div>
 
           <div className="compose-field">
-            <label>Password (to send)</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Your account password"
-              required
-            />
-          </div>
-
-          <div className="compose-field">
             <label>Message</label>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Write your message..."
-              rows={12}
+              onKeyDown={handleKeyDown}
+              placeholder="Write your message... (Ctrl+Enter to send)"
+              rows={15}
               required
             />
           </div>

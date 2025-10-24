@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getEmails } from '../utils/api';
+import { getEmails, searchEmails } from '../utils/api';
 import { formatDistanceToNow } from 'date-fns';
-import { Mail, MailOpen } from 'lucide-react';
+import { Mail, MailOpen, Search, X } from 'lucide-react';
 import './EmailList.css';
 
 export default function EmailList({ mailbox, refreshTrigger }) {
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadEmails();
+
+    // Auto-refresh every 30 seconds
+    const intervalId = setInterval(() => {
+      loadEmails();
+    }, 30000);
+
+    return () => clearInterval(intervalId);
   }, [mailbox, refreshTrigger]);
 
   const loadEmails = async () => {
@@ -23,6 +32,37 @@ export default function EmailList({ mailbox, refreshTrigger }) {
       console.error('Failed to load emails:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      loadEmails();
+      setIsSearching(false);
+      return;
+    }
+
+    setLoading(true);
+    setIsSearching(true);
+    try {
+      const data = await searchEmails(searchQuery, mailbox);
+      setEmails(data);
+    } catch (err) {
+      console.error('Failed to search emails:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setIsSearching(false);
+    loadEmails();
+  };
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
     }
   };
 
@@ -42,8 +82,29 @@ export default function EmailList({ mailbox, refreshTrigger }) {
   return (
     <div className="email-list">
       <div className="email-list-header">
-        <h2>{mailbox}</h2>
-        <span className="email-count">{emails.length} emails</span>
+        <div className="email-list-title">
+          <h2>{isSearching ? `Search in ${mailbox}` : mailbox}</h2>
+          <span className="email-count">{emails.length} emails</span>
+        </div>
+        <div className="email-search-bar">
+          <input
+            type="text"
+            placeholder="Search emails..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={handleSearchKeyPress}
+            className="search-input"
+          />
+          {isSearching ? (
+            <button onClick={handleClearSearch} className="search-btn clear">
+              <X size={18} />
+            </button>
+          ) : (
+            <button onClick={handleSearch} className="search-btn">
+              <Search size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="email-list-items">

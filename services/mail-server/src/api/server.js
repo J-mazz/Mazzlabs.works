@@ -42,6 +42,7 @@ export class APIServer {
 
     // User routes
     this.app.get('/api/users/me', this.getCurrentUser.bind(this));
+    this.app.post('/api/users/change-password', this.changePassword.bind(this));
     this.app.get('/api/users', this.getUsers.bind(this));
 
     // Mailbox routes
@@ -182,6 +183,34 @@ export class APIServer {
     });
   }
 
+  async changePassword(req, res) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Current and new password required' });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters' });
+      }
+
+      // Verify current password
+      const isValid = await this.userManager.verifyPassword(req.user.email, currentPassword);
+      if (!isValid) {
+        return res.status(401).json({ error: 'Current password is incorrect' });
+      }
+
+      // Update password
+      await this.userManager.updatePassword(req.user.id, newPassword);
+
+      res.json({ success: true, message: 'Password updated successfully' });
+    } catch (err) {
+      console.error('Change password error:', err);
+      res.status(500).json({ error: 'Failed to change password' });
+    }
+  }
+
   getUsers(req, res) {
     if (!req.user.is_admin) {
       return res.status(403).json({ error: 'Forbidden' });
@@ -223,14 +252,30 @@ export class APIServer {
         return res.status(400).json({ error: 'To and content required' });
       }
 
+      // Store email in Sent folder
+      const emailData = {
+        user_id: req.user.id,
+        from_address: req.user.email,
+        to_address: to,
+        subject: subject || '(No Subject)',
+        body_text: text || '',
+        body_html: html || '',
+        mailbox: 'Sent',
+        size: (text || html || '').length,
+        received_at: new Date().toISOString()
+      };
+
+      this.emailManager.storeEmail(emailData);
+
       // Create nodemailer transport using our SMTP outgoing server
+      // Note: For now, we'll send without SMTP auth since it's the same server
+      // In production, you'd want proper auth or use a service account
       const transporter = nodemailer.createTransport({
         host: 'localhost',
-        port: this.config.smtpPortSecure, // Use outgoing port (587/465)
-        secure: this.config.smtpPortSecure === 465, // Use TLS for port 465
-        auth: {
-          user: req.user.email,
-          pass: req.body.password // User needs to provide password for sending
+        port: this.config.smtpPort, // Use incoming port for local delivery
+        secure: false,
+        tls: {
+          rejectUnauthorized: false
         }
       });
 

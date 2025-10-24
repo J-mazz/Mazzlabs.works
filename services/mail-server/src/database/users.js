@@ -40,6 +40,12 @@ export class UserManager {
     return await bcrypt.compare(password, user.password);
   }
 
+  async updatePassword(userId, newPassword) {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const stmt = this.db.prepare('UPDATE users SET password = ? WHERE id = ?');
+    return stmt.run(hashedPassword, userId);
+  }
+
   getUserByEmail(email) {
     const stmt = this.db.prepare('SELECT * FROM users WHERE email = ?');
     return stmt.get(email);

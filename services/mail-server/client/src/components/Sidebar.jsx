@@ -1,4 +1,4 @@
-import { Mail, Inbox, Send, FileText, Trash, AlertCircle, LogOut, Edit } from 'lucide-react';
+import { Mail, Inbox, Send, FileText, Trash, AlertCircle, LogOut, Edit, Settings as SettingsIcon } from 'lucide-react';
 import './Sidebar.css';
 
 const iconMap = {
@@ -9,7 +9,7 @@ const iconMap = {
   'Spam': AlertCircle
 };
 
-export default function Sidebar({ user, mailboxes, currentMailbox, onMailboxChange, onCompose, onLogout }) {
+export default function Sidebar({ user, mailboxes, currentMailbox, onMailboxChange, onCompose, onSettings, onLogout }) {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
@@ -52,10 +52,16 @@ export default function Sidebar({ user, mailboxes, currentMailbox, onMailboxChan
         })}
       </div>
 
-      <button className="logout-button" onClick={onLogout}>
-        <LogOut size={18} />
-        Logout
-      </button>
+      <div className="sidebar-actions">
+        <button className="settings-button" onClick={onSettings}>
+          <SettingsIcon size={18} />
+          Settings
+        </button>
+        <button className="logout-button" onClick={onLogout}>
+          <LogOut size={18} />
+          Logout
+        </button>
+      </div>
     </div>
   );
 }
