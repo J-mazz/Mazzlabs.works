@@ -61,7 +61,8 @@ apiServer.start();
 console.log('\n=================================');
 console.log('Servers running:');
 console.log(`- API Server: http://localhost:${config.port}`);
-console.log(`- SMTP Server: port ${config.smtpPort}`);
+console.log(`- SMTP Incoming (MX): port ${config.smtpPort}`);
+console.log(`- SMTP Outgoing (submission): port ${config.smtpPortSecure}`);
 console.log('=================================\n');
 
 // Graceful shutdown

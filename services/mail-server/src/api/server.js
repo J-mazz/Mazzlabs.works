@@ -223,11 +223,11 @@ export class APIServer {
         return res.status(400).json({ error: 'To and content required' });
       }
 
-      // Create nodemailer transport using our SMTP server
+      // Create nodemailer transport using our SMTP outgoing server
       const transporter = nodemailer.createTransport({
         host: 'localhost',
-        port: this.config.smtpPort,
-        secure: false,
+        port: this.config.smtpPortSecure, // Use outgoing port (587/465)
+        secure: this.config.smtpPortSecure === 465, // Use TLS for port 465
         auth: {
           user: req.user.email,
           pass: req.body.password // User needs to provide password for sending
