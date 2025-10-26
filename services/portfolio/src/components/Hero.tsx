@@ -54,7 +54,7 @@ const Hero: React.FC = () => {
           >
             Where C++ meets AI to make Linux systems more secure
             <br />
-            <span className="text-turquoise-400 text-lg">(and occasionally breaks things in Debian)</span>
+            <span className="text-turquoise-400 text-lg"></span>
           </motion.p>
 
           <motion.div
