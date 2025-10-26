@@ -9,3 +9,7 @@ client/node_modules/
 *.pem
 *.key
 *.crt
+
+# Test files
+test-mail*.db*
+coverage/
