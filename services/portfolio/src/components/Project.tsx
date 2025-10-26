@@ -60,9 +60,10 @@ const Project: React.FC = () => {
             Sys-Scan-Graph
           </h2>
           <p className="text-xl text-granite-600 max-w-3xl mx-auto">
-            A Linux security analysis platform that combines a high-performance C++ core
-            with AI-powered threat reasoning. Because sometimes you need a neural network
-            to tell you your server is basically a wide-open barn door. 🚪
+            A Linux security analysis platform combining high-performance C++ scanning
+            with AI-powered threat assessment. Built for security professionals who need
+            accurate vulnerability detection and intelligent risk analysis without cloud dependencies—and
+            for anyone seeking a free, open-source security tool to protect their systems.
           </p>
         </motion.div>
 
