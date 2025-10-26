@@ -36,7 +36,7 @@ const Project: React.FC = () => {
       name: 'sys-scan-agent_MLops',
       description: 'ML pipeline for training specialized security models',
       url: 'https://github.com/J-mazz/sys-scan-agent_MLops',
-      tech: ['Python', 'AWS SageMaker', 'Synthetic Data']
+      tech: ['Python', 'TRL', 'Synthetic Data']
     },
     {
       name: 'sys-scan-UI',
@@ -101,7 +101,8 @@ const Project: React.FC = () => {
                   Sys-scan-graph is what happens when you combine modern C++ with Large Language Models
                   and decide security tools don't have to be boring. It's a hybrid architecture where
                   a blazing-fast C++ core gathers system data while a Python intelligence layer performs
-                  cyclical reasoning through LangGraph state machines.
+                  cyclical reasoning through LangGraph state machines, guided by industry specific fine-tuning, 
+                  and robust heuristics.
                 </p>
                 <p className="text-lg text-granite-700 leading-relaxed">
                   Think of it as having a security analyst who never sleeps, never asks for coffee,
