@@ -2,9 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
+import { RateLimiterMemory } from 'rate-limiter-flexible';
 import nodemailer from 'nodemailer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import xss from 'xss';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,13 +18,44 @@ export class APIServer {
     this.userManager = userManager;
     this.config = config;
 
+    // Rate limiters for sensitive endpoints
+    this.authLimiter = new RateLimiterMemory({
+      points: 5, // 5 attempts
+      duration: 60 * 15, // per 15 minutes
+      blockDuration: 60 * 15 // block for 15 minutes
+    });
+
+    this.emailLimiter = new RateLimiterMemory({
+      points: 20, // 20 emails
+      duration: 60 * 60, // per hour
+      blockDuration: 60 * 5 // block for 5 minutes
+    });
+
+    this.passwordChangeLimiter = new RateLimiterMemory({
+      points: 3, // 3 attempts
+      duration: 60 * 60, // per hour
+      blockDuration: 60 * 30 // block for 30 minutes
+    });
+
     this.setupMiddleware();
     this.setupRoutes();
   }
 
   setupMiddleware() {
     this.app.use(helmet({
-      contentSecurityPolicy: false
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"]
+        }
+      }
     }));
     this.app.use(cors());
     this.app.use(express.json());
@@ -33,16 +66,16 @@ export class APIServer {
   }
 
   setupRoutes() {
-    // Auth routes
-    this.app.post('/api/auth/login', this.login.bind(this));
-    this.app.post('/api/auth/register', this.register.bind(this));
+    // Auth routes with rate limiting
+    this.app.post('/api/auth/login', this.rateLimit(this.authLimiter), this.login.bind(this));
+    this.app.post('/api/auth/register', this.rateLimit(this.authLimiter), this.register.bind(this));
 
     // Protected routes
     this.app.use('/api/*', this.authenticate.bind(this));
 
     // User routes
     this.app.get('/api/users/me', this.getCurrentUser.bind(this));
-    this.app.post('/api/users/change-password', this.changePassword.bind(this));
+    this.app.post('/api/users/change-password', this.rateLimit(this.passwordChangeLimiter), this.changePassword.bind(this));
     this.app.get('/api/users', this.getUsers.bind(this));
 
     // Mailbox routes
@@ -51,7 +84,7 @@ export class APIServer {
     // Email routes
     this.app.get('/api/emails', this.getEmails.bind(this));
     this.app.get('/api/emails/:id', this.getEmail.bind(this));
-    this.app.post('/api/emails/send', this.sendEmail.bind(this));
+    this.app.post('/api/emails/send', this.rateLimit(this.emailLimiter), this.sendEmail.bind(this));
     this.app.put('/api/emails/:id/read', this.markAsRead.bind(this));
     this.app.put('/api/emails/:id/unread', this.markAsUnread.bind(this));
     this.app.put('/api/emails/:id/flag', this.flagEmail.bind(this));
@@ -149,6 +182,23 @@ export class APIServer {
     }
   }
 
+  rateLimit(limiter) {
+    return async (req, res, next) => {
+      const key = req.ip || req.connection.remoteAddress;
+      try {
+        await limiter.consume(key);
+        next();
+      } catch (rateLimiterRes) {
+        const retryAfter = Math.ceil(rateLimiterRes.msBeforeNext / 1000);
+        res.set('Retry-After', String(retryAfter));
+        return res.status(429).json({
+          error: 'Too many requests',
+          retryAfter
+        });
+      }
+    };
+  }
+
   authenticate(req, res, next) {
     try {
       const authHeader = req.headers.authorization;
@@ -241,15 +291,26 @@ export class APIServer {
       return res.status(404).json({ error: 'Email not found' });
     }
 
+    // Sanitize HTML content to prevent XSS
+    if (email.body_html) {
+      email.body_html = xss(email.body_html);
+    }
+
     res.json(email);
   }
 
   async sendEmail(req, res) {
     try {
-      const { to, subject, text, html } = req.body;
+      const { to, subject, text } = req.body;
+      let { html } = req.body;
 
       if (!to || (!text && !html)) {
         return res.status(400).json({ error: 'To and content required' });
+      }
+
+      // Sanitize HTML content to prevent XSS
+      if (html) {
+        html = xss(html);
       }
 
       // Store email in Sent folder

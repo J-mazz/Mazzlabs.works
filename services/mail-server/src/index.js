@@ -41,7 +41,7 @@ try {
   if (!existingAdmin) {
     await userManager.createUser(adminEmail, adminPassword, true);
     console.log(`✓ Admin user created: ${adminEmail}`);
-    console.log(`  Default password: ${adminPassword}`);
+    console.log('  Password set from ADMIN_PASSWORD environment variable');
     console.log('  PLEASE CHANGE THIS PASSWORD!\n');
   } else {
     console.log(`✓ Admin user exists: ${adminEmail}\n`);
