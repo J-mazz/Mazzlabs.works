@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const About: React.FC = () => {
   const skills = [
     { category: 'Languages', items: ['C++20', 'Python', 'TypeScript', 'Bash'] },
-    { category: 'AI/ML', items: ['LangGraph', 'Mistral-7B', 'LoRA', 'AWS SageMaker'] },
+    { category: 'AI/ML', items: ['LangGraph', 'Mistral-7B', 'LoRA', 'Transformers Reinforcement Learning', 'Math'] },
     { category: 'Security', items: ['Seccomp', 'MITRE ATT&CK', 'Compliance', 'Threat Analysis'] },
     { category: 'Tools & Frameworks', items: ['CMake', 'GTK4', 'React', 'SQLite'] },
   ];
@@ -36,20 +36,20 @@ const About: React.FC = () => {
                 <h3 className="text-2xl font-bold mb-4 text-turquoise-400">Joseph Mazzini</h3>
                 <div className="space-y-4 text-gray-300 text-lg leading-relaxed">
                   <p>
-                    I build open-source security tools because I believe that good security shouldn't
-                    require sending your data to someone else's cloud. Or paying a subscription.
-                    Or reading 200 pages of documentation just to find out if your server has a rogue process.
+                    I build open-source security tools to improve my abilities as a developer,
+                    but also to address gaps in the rapidly evolving security landscape today; 
+                    without harvesting your data, requiring a subscription, with cohesive operation,
+                    you dont need to read 200 pages of documentation just to find out if your server has a rogue process.
                   </p>
                   <p>
                     My work combines modern C++ with AI—not the buzzword kind, but the "actually runs
-                    locally and doesn't require an API key" kind. I'm particularly fond of taking complex
-                    security problems and making them accessible through clean code and thoughtful architecture.
+                    locally and doesn't require an API key" kind. I see ML as a powerful tool and approac it rigerously, 
+                    In sys-scan-graph it enables the fine-tuning of a powerful, robust narrow LLM model well suited to navigate 
+                    the LangGraph orchestration (which is built with robust heuristics that serve as both guide and fallback.)
+                    I'm particularly fond of taking complex security problems and making them accessible through clean code, thoughtful architecture
+                    and comprehensive code coverage.
                   </p>
-                  <p>
-                    When I'm not wrangling C++20 templates or debugging LangGraph state machines, I'm
-                    probably learning the finer points of Debian packaging policy. The hard way. As one does.
-                  </p>
-                  <p className="text-turquoise-300 font-medium">
+                   <p className="text-turquoise-300 font-medium">
                     Currently working on getting sys-scan-graph into Debian's official repositories,
                     contributing to open source, and occasionally remembering to push my commits.
                   </p>
