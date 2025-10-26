@@ -104,6 +104,16 @@ const Project: React.FC = () => {
                   cyclical reasoning through LangGraph state machines, guided by industry specific fine-tuning, 
                   and robust heuristics.
                 </p>
+                <p ## Build, Quality, and Security
+                [![CI](https://github.com/J-mazz/sys-scan-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/J-mazz/sys-scan-graph/actions/workflows/ci.yml)
+                [![CodeQL](https://github.com/J-mazz/sys-scan-graph/actions/workflows/codeql.yml/badge.svg)](https://github.com/J-mazz/sys-scan-graph/actions/workflows/codeql.yml)
+                [![CodeScene Analysis](https://codescene.io/images/analyzed-by-codescene-badge.svg)](https://codescene.io/projects/71206)
+                [![CodeScene Code Health](https://codescene.io/projects/72512/status-badges/average-code-health)](https://codescene.io/projects/72512)
+                [![Coverage](https://img.shields.io/badge/coverage-%3E=85%25-brightgreen.svg)](docs/TEST_COVERAGE.md)
+                - C++: 86% line coverage; Python agent: 83% (see [Test Coverage](docs/TEST_COVERAGE.md))
+                - Sanitizers: ASan/UBSan clean
+                - Security: CodeQL passing; see [SECURITY.md](SECURITY.md) and [Security Architecture](SECURITY_ARCHITECTURE.md)
+                </motion.div>p>
                 <p className="text-lg text-granite-700 leading-relaxed">
                   Think of it as having a security analyst who never sleeps, never asks for coffee,
                   and works entirely offline. Compliance assessment (PCI DSS, HIPAA, NIST CSF),
