@@ -62,8 +62,8 @@ const Project: React.FC = () => {
           <p className="text-xl text-granite-600 max-w-3xl mx-auto">
             A Linux security analysis platform combining high-performance C++ scanning
             with AI-powered threat assessment. Built for security professionals who need
-            accurate vulnerability detection and intelligent risk analysis without cloud dependencies—and
-            for anyone seeking a free, open-source security tool to protect their systems.
+            accurate vulnerability detection and intelligent risk analysis without cloud dependencies,
+            as well as for anyone seeking a free, open-source security tool to protect their systems.
           </p>
         </motion.div>
 
