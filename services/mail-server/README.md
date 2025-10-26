@@ -2,20 +2,6 @@
 
 A complete, self-hosted email server solution for `@mazzlabs.works` with a modern web interface.
 
-## 🚨 Critical SMTP Fix Applied (2025-10-24)
-
-**Problem Solved:** The mail server can now receive emails from external domains (Gmail, Yahoo, etc.).
-
-**Changes Made:**
-- Split SMTP server into two separate servers (incoming port 25, outgoing port 465/587)
-- Fixed authentication requirements for incoming mail
-- Fixed sender domain validation
-- Updated API to use outgoing SMTP port
-
-**Status:** ✅ Code updated, ready for deployment to Azure VM
-
-See [Architecture](#smtp-server-architecture-critical-fix-applied) section for technical details.
-
 ## Features
 
 - **Full Email Server**: SMTP + IMAP support
