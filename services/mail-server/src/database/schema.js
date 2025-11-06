@@ -80,6 +80,38 @@ export function initDatabase(dbPath) {
     )
   `);
 
+  // Password reset tokens table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      token TEXT UNIQUE NOT NULL,
+      expires_at DATETIME NOT NULL,
+      used BOOLEAN DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Add MFA columns to users table if they don't exist
+  try {
+    db.exec('ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN DEFAULT 0');
+  } catch (err) {
+    // Column already exists, ignore
+  }
+
+  try {
+    db.exec('ALTER TABLE users ADD COLUMN mfa_secret TEXT');
+  } catch (err) {
+    // Column already exists, ignore
+  }
+
+  try {
+    db.exec('ALTER TABLE users ADD COLUMN backup_codes TEXT');
+  } catch (err) {
+    // Column already exists, ignore
+  }
+
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_emails_user_id ON emails(user_id);
@@ -88,6 +120,7 @@ export function initDatabase(dbPath) {
     CREATE INDEX IF NOT EXISTS idx_emails_received_at ON emails(received_at);
     CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
   `);
 
   return db;

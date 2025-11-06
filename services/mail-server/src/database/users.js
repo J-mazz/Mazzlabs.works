@@ -72,4 +72,66 @@ export class UserManager {
     const stmt = this.db.prepare('DELETE FROM users WHERE id = ?');
     return stmt.run(userId);
   }
+
+  // Password Reset Methods
+  createPasswordResetToken(userId, token, expiresAt) {
+    const stmt = this.db.prepare(`
+      INSERT INTO password_reset_tokens (user_id, token, expires_at)
+      VALUES (?, ?, ?)
+    `);
+    return stmt.run(userId, token, expiresAt);
+  }
+
+  getPasswordResetToken(token) {
+    const stmt = this.db.prepare(`
+      SELECT * FROM password_reset_tokens
+      WHERE token = ? AND used = 0 AND expires_at > datetime('now')
+    `);
+    return stmt.get(token);
+  }
+
+  markPasswordResetTokenAsUsed(token) {
+    const stmt = this.db.prepare(`
+      UPDATE password_reset_tokens SET used = 1 WHERE token = ?
+    `);
+    return stmt.run(token);
+  }
+
+  // MFA Methods
+  enableMFA(userId, secret) {
+    const stmt = this.db.prepare(`
+      UPDATE users SET mfa_enabled = 1, mfa_secret = ? WHERE id = ?
+    `);
+    return stmt.run(secret, userId);
+  }
+
+  disableMFA(userId) {
+    const stmt = this.db.prepare(`
+      UPDATE users SET mfa_enabled = 0, mfa_secret = NULL, backup_codes = NULL WHERE id = ?
+    `);
+    return stmt.run(userId);
+  }
+
+  setBackupCodes(userId, codes) {
+    const stmt = this.db.prepare(`
+      UPDATE users SET backup_codes = ? WHERE id = ?
+    `);
+    return stmt.run(JSON.stringify(codes), userId);
+  }
+
+  getBackupCodes(userId) {
+    const user = this.getUserById(userId);
+    if (!user || !user.backup_codes) return [];
+    return JSON.parse(user.backup_codes);
+  }
+
+  useBackupCode(userId, code) {
+    const codes = this.getBackupCodes(userId);
+    const index = codes.indexOf(code);
+    if (index === -1) return false;
+
+    codes.splice(index, 1);
+    this.setBackupCodes(userId, codes);
+    return true;
+  }
 }

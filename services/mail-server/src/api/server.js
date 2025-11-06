@@ -7,6 +7,9 @@ import nodemailer from 'nodemailer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import xss from 'xss';
+import crypto from 'crypto';
+import speakeasy from 'speakeasy';
+import QRCode from 'qrcode';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,6 +72,11 @@ export class APIServer {
     // Auth routes with rate limiting
     this.app.post('/api/auth/login', this.rateLimit(this.authLimiter), this.login.bind(this));
     this.app.post('/api/auth/register', this.rateLimit(this.authLimiter), this.register.bind(this));
+    this.app.post('/api/auth/verify-mfa', this.rateLimit(this.authLimiter), this.verifyMFALogin.bind(this));
+
+    // Password reset routes (public)
+    this.app.post('/api/auth/forgot-password', this.rateLimit(this.authLimiter), this.requestPasswordReset.bind(this));
+    this.app.post('/api/auth/reset-password', this.rateLimit(this.authLimiter), this.resetPassword.bind(this));
 
     // Protected routes
     this.app.use('/api/*', this.authenticate.bind(this));
@@ -77,6 +85,11 @@ export class APIServer {
     this.app.get('/api/users/me', this.getCurrentUser.bind(this));
     this.app.post('/api/users/change-password', this.rateLimit(this.passwordChangeLimiter), this.changePassword.bind(this));
     this.app.get('/api/users', this.getUsers.bind(this));
+
+    // MFA routes
+    this.app.post('/api/users/mfa/setup', this.setupMFA.bind(this));
+    this.app.post('/api/users/mfa/verify-setup', this.verifyMFASetup.bind(this));
+    this.app.post('/api/users/mfa/disable', this.disableMFA.bind(this));
 
     // Mailbox routes
     this.app.get('/api/mailboxes', this.getMailboxes.bind(this));
@@ -120,6 +133,24 @@ export class APIServer {
       }
 
       const user = this.userManager.getUserByEmail(email);
+
+      // Check if MFA is enabled
+      if (user.mfa_enabled) {
+        // Create a temporary token for MFA verification
+        const mfaToken = jwt.sign(
+          { userId: user.id, email: user.email, mfaPending: true },
+          this.config.jwtSecret,
+          { expiresIn: '5m' }
+        );
+
+        return res.json({
+          mfaRequired: true,
+          mfaToken,
+          message: 'MFA verification required'
+        });
+      }
+
+      // No MFA required, issue regular token
       const token = jwt.sign(
         { userId: user.id, email: user.email },
         this.config.jwtSecret,
@@ -132,7 +163,8 @@ export class APIServer {
           id: user.id,
           email: user.email,
           username: user.username,
-          isAdmin: user.is_admin
+          isAdmin: user.is_admin,
+          mfaEnabled: user.mfa_enabled || false
         }
       });
     } catch (err) {
@@ -400,6 +432,242 @@ export class APIServer {
 
     const emails = this.emailManager.searchEmails(req.user.id, q, mailbox);
     res.json(emails);
+  }
+
+  // Password Reset Methods
+  async requestPasswordReset(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: 'Email required' });
+      }
+
+      const user = this.userManager.getUserByEmail(email);
+
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return res.json({ success: true, message: 'If the email exists, a reset link has been sent' });
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+
+      this.userManager.createPasswordResetToken(user.id, resetToken, expiresAt);
+
+      // Send reset email
+      const resetLink = `http://${this.config.domain}/reset-password?token=${resetToken}`;
+      const transporter = nodemailer.createTransport({
+        host: 'localhost',
+        port: this.config.smtpPort,
+        secure: false,
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+
+      await transporter.sendMail({
+        from: `noreply@${this.config.domain}`,
+        to: email,
+        subject: 'Password Reset Request',
+        text: `You requested a password reset. Click the link below to reset your password:\n\n${resetLink}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, please ignore this email.`,
+        html: `<p>You requested a password reset. Click the link below to reset your password:</p><p><a href="${resetLink}">Reset Password</a></p><p>This link expires in 1 hour.</p><p>If you didn't request this, please ignore this email.</p>`
+      });
+
+      res.json({ success: true, message: 'If the email exists, a reset link has been sent' });
+    } catch (err) {
+      console.error('Password reset request error:', err);
+      res.status(500).json({ error: 'Failed to process password reset request' });
+    }
+  }
+
+  async resetPassword(req, res) {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: 'Token and new password required' });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters' });
+      }
+
+      const resetToken = this.userManager.getPasswordResetToken(token);
+
+      if (!resetToken) {
+        return res.status(400).json({ error: 'Invalid or expired reset token' });
+      }
+
+      // Update password
+      await this.userManager.updatePassword(resetToken.user_id, newPassword);
+
+      // Mark token as used
+      this.userManager.markPasswordResetTokenAsUsed(token);
+
+      res.json({ success: true, message: 'Password reset successfully' });
+    } catch (err) {
+      console.error('Password reset error:', err);
+      res.status(500).json({ error: 'Failed to reset password' });
+    }
+  }
+
+  // MFA Methods
+  async verifyMFALogin(req, res) {
+    try {
+      const { mfaToken, code, backupCode } = req.body;
+
+      if (!mfaToken || (!code && !backupCode)) {
+        return res.status(400).json({ error: 'MFA token and code required' });
+      }
+
+      // Verify MFA token
+      let decoded;
+      try {
+        decoded = jwt.verify(mfaToken, this.config.jwtSecret);
+      } catch (err) {
+        return res.status(401).json({ error: 'Invalid or expired MFA token' });
+      }
+
+      if (!decoded.mfaPending) {
+        return res.status(401).json({ error: 'Invalid MFA token' });
+      }
+
+      const user = this.userManager.getUserById(decoded.userId);
+
+      if (!user || !user.mfa_enabled) {
+        return res.status(401).json({ error: 'MFA not enabled for this account' });
+      }
+
+      let verified = false;
+
+      // Try backup code first if provided
+      if (backupCode) {
+        verified = this.userManager.useBackupCode(user.id, backupCode);
+      } else if (code) {
+        // Verify TOTP code
+        verified = speakeasy.totp.verify({
+          secret: user.mfa_secret,
+          encoding: 'base32',
+          token: code,
+          window: 2
+        });
+      }
+
+      if (!verified) {
+        return res.status(401).json({ error: 'Invalid verification code' });
+      }
+
+      // Issue regular token
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        this.config.jwtSecret,
+        { expiresIn: '7d' }
+      );
+
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          isAdmin: user.is_admin,
+          mfaEnabled: true
+        }
+      });
+    } catch (err) {
+      console.error('MFA verification error:', err);
+      res.status(500).json({ error: 'Failed to verify MFA' });
+    }
+  }
+
+  async setupMFA(req, res) {
+    try {
+      // Generate secret
+      const secret = speakeasy.generateSecret({
+        name: `MazzLabs Mail (${req.user.email})`,
+        issuer: 'MazzLabs Mail'
+      });
+
+      // Generate QR code
+      const qrCode = await QRCode.toDataURL(secret.otpauth_url);
+
+      // Store secret temporarily in session (in production, use session store)
+      // For now, return it to client to send back on verification
+      res.json({
+        secret: secret.base32,
+        qrCode
+      });
+    } catch (err) {
+      console.error('MFA setup error:', err);
+      res.status(500).json({ error: 'Failed to setup MFA' });
+    }
+  }
+
+  async verifyMFASetup(req, res) {
+    try {
+      const { secret, code } = req.body;
+
+      if (!secret || !code) {
+        return res.status(400).json({ error: 'Secret and code required' });
+      }
+
+      // Verify the code
+      const verified = speakeasy.totp.verify({
+        secret,
+        encoding: 'base32',
+        token: code,
+        window: 2
+      });
+
+      if (!verified) {
+        return res.status(401).json({ error: 'Invalid verification code' });
+      }
+
+      // Generate backup codes
+      const backupCodes = [];
+      for (let i = 0; i < 10; i++) {
+        backupCodes.push(crypto.randomBytes(4).toString('hex').toUpperCase());
+      }
+
+      // Enable MFA for user
+      this.userManager.enableMFA(req.user.id, secret);
+      this.userManager.setBackupCodes(req.user.id, backupCodes);
+
+      res.json({
+        success: true,
+        message: 'MFA enabled successfully',
+        backupCodes
+      });
+    } catch (err) {
+      console.error('MFA verification error:', err);
+      res.status(500).json({ error: 'Failed to verify MFA setup' });
+    }
+  }
+
+  async disableMFA(req, res) {
+    try {
+      const { password } = req.body;
+
+      if (!password) {
+        return res.status(400).json({ error: 'Password required to disable MFA' });
+      }
+
+      // Verify password
+      const isValid = await this.userManager.verifyPassword(req.user.email, password);
+
+      if (!isValid) {
+        return res.status(401).json({ error: 'Invalid password' });
+      }
+
+      this.userManager.disableMFA(req.user.id);
+
+      res.json({ success: true, message: 'MFA disabled successfully' });
+    } catch (err) {
+      console.error('MFA disable error:', err);
+      res.status(500).json({ error: 'Failed to disable MFA' });
+    }
   }
 
   start() {
