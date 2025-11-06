@@ -91,6 +91,14 @@ export class APIServer {
     this.app.post('/api/users/mfa/verify-setup', this.verifyMFASetup.bind(this));
     this.app.post('/api/users/mfa/disable', this.disableMFA.bind(this));
 
+    // Recovery options routes
+    this.app.post('/api/users/recovery-email', this.setRecoveryEmail.bind(this));
+    this.app.post('/api/users/phone-number', this.setPhoneNumber.bind(this));
+
+    // Admin routes (admin only)
+    this.app.get('/api/admin/users', this.requireAdmin.bind(this), this.getAllUsersAdmin.bind(this));
+    this.app.post('/api/admin/users/:userId/reset-password', this.requireAdmin.bind(this), this.adminResetPassword.bind(this));
+
     // Mailbox routes
     this.app.get('/api/mailboxes', this.getMailboxes.bind(this));
 
@@ -175,7 +183,7 @@ export class APIServer {
 
   async register(req, res) {
     try {
-      const { email, password } = req.body;
+      const { email, password, recoveryEmail, phoneNumber } = req.body;
 
       if (!email || !password) {
         return res.status(400).json({ error: 'Email and password required' });
@@ -191,6 +199,15 @@ export class APIServer {
       }
 
       const userId = await this.userManager.createUser(email, password);
+
+      // Set recovery options if provided
+      if (recoveryEmail) {
+        this.userManager.setRecoveryEmail(userId, recoveryEmail);
+      }
+      if (phoneNumber) {
+        this.userManager.setPhoneNumber(userId, phoneNumber);
+      }
+
       const user = this.userManager.getUserById(userId);
 
       const token = jwt.sign(
@@ -261,7 +278,10 @@ export class APIServer {
       username: req.user.username,
       isAdmin: req.user.is_admin,
       storageUsed: req.user.storage_used,
-      storageQuota: req.user.storage_quota
+      storageQuota: req.user.storage_quota,
+      mfaEnabled: req.user.mfa_enabled || false,
+      recoveryEmail: req.user.recovery_email || null,
+      phoneNumber: req.user.phone_number || null
     });
   }
 
@@ -450,14 +470,22 @@ export class APIServer {
         return res.json({ success: true, message: 'If the email exists, a reset link has been sent' });
       }
 
+      // Check if user has a recovery email configured
+      if (!user.recovery_email) {
+        return res.status(400).json({
+          error: 'No recovery email configured. Please contact an administrator for password reset assistance.',
+          noRecoveryEmail: true
+        });
+      }
+
       // Generate reset token
       const resetToken = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
 
       this.userManager.createPasswordResetToken(user.id, resetToken, expiresAt);
 
-      // Send reset email
-      const resetLink = `http://${this.config.domain}/reset-password?token=${resetToken}`;
+      // Send reset email to recovery email address
+      const resetLink = `https://${this.config.domain}/reset-password?token=${resetToken}`;
       const transporter = nodemailer.createTransport({
         host: 'localhost',
         port: this.config.smtpPort,
@@ -469,13 +497,13 @@ export class APIServer {
 
       await transporter.sendMail({
         from: `noreply@${this.config.domain}`,
-        to: email,
-        subject: 'Password Reset Request',
-        text: `You requested a password reset. Click the link below to reset your password:\n\n${resetLink}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, please ignore this email.`,
-        html: `<p>You requested a password reset. Click the link below to reset your password:</p><p><a href="${resetLink}">Reset Password</a></p><p>This link expires in 1 hour.</p><p>If you didn't request this, please ignore this email.</p>`
+        to: user.recovery_email, // Send to recovery email
+        subject: 'Password Reset Request - MazzLabs Mail',
+        text: `You requested a password reset for ${email}.\n\nClick the link below to reset your password:\n\n${resetLink}\n\nThis link expires in 1 hour.\n\nIf you didn't request this, please ignore this email and contact an administrator.`,
+        html: `<p>You requested a password reset for <strong>${email}</strong>.</p><p><a href="${resetLink}">Reset Password</a></p><p>This link expires in 1 hour.</p><p>If you didn't request this, please ignore this email and contact an administrator.</p>`
       });
 
-      res.json({ success: true, message: 'If the email exists, a reset link has been sent' });
+      res.json({ success: true, message: 'A reset link has been sent to your recovery email address' });
     } catch (err) {
       console.error('Password reset request error:', err);
       res.status(500).json({ error: 'Failed to process password reset request' });
@@ -667,6 +695,130 @@ export class APIServer {
     } catch (err) {
       console.error('MFA disable error:', err);
       res.status(500).json({ error: 'Failed to disable MFA' });
+    }
+  }
+
+  // Recovery Options Methods
+  async setRecoveryEmail(req, res) {
+    try {
+      const { recoveryEmail, password } = req.body;
+
+      if (!recoveryEmail) {
+        return res.status(400).json({ error: 'Recovery email required' });
+      }
+
+      if (!password) {
+        return res.status(400).json({ error: 'Password required to set recovery email' });
+      }
+
+      // Verify password
+      const isValid = await this.userManager.verifyPassword(req.user.email, password);
+
+      if (!isValid) {
+        return res.status(401).json({ error: 'Invalid password' });
+      }
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(recoveryEmail)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+      }
+
+      this.userManager.setRecoveryEmail(req.user.id, recoveryEmail);
+
+      res.json({ success: true, message: 'Recovery email set successfully' });
+    } catch (err) {
+      console.error('Set recovery email error:', err);
+      res.status(500).json({ error: 'Failed to set recovery email' });
+    }
+  }
+
+  async setPhoneNumber(req, res) {
+    try {
+      const { phoneNumber, password } = req.body;
+
+      if (!phoneNumber) {
+        return res.status(400).json({ error: 'Phone number required' });
+      }
+
+      if (!password) {
+        return res.status(400).json({ error: 'Password required to set phone number' });
+      }
+
+      // Verify password
+      const isValid = await this.userManager.verifyPassword(req.user.email, password);
+
+      if (!isValid) {
+        return res.status(401).json({ error: 'Invalid password' });
+      }
+
+      this.userManager.setPhoneNumber(req.user.id, phoneNumber);
+
+      res.json({ success: true, message: 'Phone number set successfully' });
+    } catch (err) {
+      console.error('Set phone number error:', err);
+      res.status(500).json({ error: 'Failed to set phone number' });
+    }
+  }
+
+  // Admin Methods
+  requireAdmin(req, res, next) {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+  }
+
+  async getAllUsersAdmin(req, res) {
+    try {
+      const users = this.userManager.getAllUsers();
+
+      // Add recovery email and phone number to response
+      const usersWithDetails = users.map(user => {
+        const fullUser = this.userManager.getUserById(user.id);
+        return {
+          ...user,
+          recoveryEmail: fullUser.recovery_email || null,
+          phoneNumber: fullUser.phone_number || null,
+          mfaEnabled: fullUser.mfa_enabled || false
+        };
+      });
+
+      res.json({ users: usersWithDetails });
+    } catch (err) {
+      console.error('Get all users error:', err);
+      res.status(500).json({ error: 'Failed to retrieve users' });
+    }
+  }
+
+  async adminResetPassword(req, res) {
+    try {
+      const { userId } = req.params;
+      const { newPassword } = req.body;
+
+      if (!newPassword) {
+        return res.status(400).json({ error: 'New password required' });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters' });
+      }
+
+      const user = this.userManager.getUserById(parseInt(userId));
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      await this.userManager.adminResetPassword(parseInt(userId), newPassword);
+
+      res.json({
+        success: true,
+        message: `Password reset successfully for ${user.email}`
+      });
+    } catch (err) {
+      console.error('Admin password reset error:', err);
+      res.status(500).json({ error: 'Failed to reset password' });
     }
   }
 

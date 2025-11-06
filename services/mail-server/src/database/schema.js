@@ -112,6 +112,18 @@ export function initDatabase(dbPath) {
     // Column already exists, ignore
   }
 
+  try {
+    db.exec('ALTER TABLE users ADD COLUMN recovery_email TEXT');
+  } catch (err) {
+    // Column already exists, ignore
+  }
+
+  try {
+    db.exec('ALTER TABLE users ADD COLUMN phone_number TEXT');
+  } catch (err) {
+    // Column already exists, ignore
+  }
+
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_emails_user_id ON emails(user_id);

@@ -134,4 +134,29 @@ export class UserManager {
     this.setBackupCodes(userId, codes);
     return true;
   }
+
+  // Recovery Methods
+  setRecoveryEmail(userId, recoveryEmail) {
+    const stmt = this.db.prepare(`
+      UPDATE users SET recovery_email = ? WHERE id = ?
+    `);
+    return stmt.run(recoveryEmail, userId);
+  }
+
+  setPhoneNumber(userId, phoneNumber) {
+    const stmt = this.db.prepare(`
+      UPDATE users SET phone_number = ? WHERE id = ?
+    `);
+    return stmt.run(phoneNumber, userId);
+  }
+
+  getUserByRecoveryEmail(recoveryEmail) {
+    const stmt = this.db.prepare('SELECT * FROM users WHERE recovery_email = ?');
+    return stmt.get(recoveryEmail);
+  }
+
+  // Admin Methods
+  async adminResetPassword(userId, newPassword) {
+    return await this.updatePassword(userId, newPassword);
+  }
 }
