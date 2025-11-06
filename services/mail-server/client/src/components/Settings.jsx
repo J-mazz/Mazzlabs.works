@@ -1,15 +1,20 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { changePassword } from '../utils/api';
-import { Lock, Save, X } from 'lucide-react';
+import { Lock, Save, X, Shield } from 'lucide-react';
+import MFASetup from './MFASetup';
 import './Settings.css';
 
-export default function Settings({ user, onClose }) {
+export default function Settings({ user, onClose, onUserUpdate }) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showMFASetup, setShowMFASetup] = useState(false);
+  const [mfaError, setMfaError] = useState('');
+  const [mfaLoading, setMfaLoading] = useState(false);
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -126,6 +131,67 @@ export default function Settings({ user, onClose }) {
             </form>
           </section>
 
+          {/* Two-Factor Authentication Section */}
+          <section className="settings-section">
+            <h3>
+              <Shield size={18} />
+              Two-Factor Authentication
+            </h3>
+
+            {mfaError && <div className="settings-error">{mfaError}</div>}
+
+            <div className="settings-info">
+              <div className="settings-info-row">
+                <label>Status</label>
+                <span style={{ color: user?.mfaEnabled ? '#4CAF50' : '#999' }}>
+                  {user?.mfaEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            </div>
+
+            <div className="settings-actions">
+              {!user?.mfaEnabled ? (
+                <button
+                  type="button"
+                  className="btn-save"
+                  onClick={() => setShowMFASetup(true)}
+                  style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                >
+                  <Shield size={18} />
+                  Enable 2FA
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-save"
+                  onClick={async () => {
+                    const password = prompt('Enter your password to disable 2FA:');
+                    if (!password) return;
+
+                    setMfaLoading(true);
+                    setMfaError('');
+
+                    try {
+                      await axios.post('/api/users/mfa/disable', { password });
+                      setMfaError('');
+                      if (onUserUpdate) onUserUpdate();
+                      window.location.reload();
+                    } catch (err) {
+                      setMfaError(err.response?.data?.error || 'Failed to disable MFA');
+                    } finally {
+                      setMfaLoading(false);
+                    }
+                  }}
+                  disabled={mfaLoading}
+                  style={{ background: '#d32f2f' }}
+                >
+                  <X size={18} />
+                  {mfaLoading ? 'Disabling...' : 'Disable 2FA'}
+                </button>
+              )}
+            </div>
+          </section>
+
           {/* Storage Info Section */}
           <section className="settings-section">
             <h3>Storage</h3>
@@ -141,6 +207,17 @@ export default function Settings({ user, onClose }) {
             </div>
           </section>
         </div>
+
+        {showMFASetup && (
+          <MFASetup
+            onClose={() => setShowMFASetup(false)}
+            onSuccess={() => {
+              setShowMFASetup(false);
+              if (onUserUpdate) onUserUpdate();
+              window.location.reload();
+            }}
+          />
+        )}
       </div>
     </div>
   );

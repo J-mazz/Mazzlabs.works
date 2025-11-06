@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { login, setAuthToken } from '../utils/api';
 import { Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
+import MFAVerification from './MFAVerification';
 import './Auth.css';
 
 export default function Login({ setToken }) {
@@ -10,6 +11,7 @@ export default function Login({ setToken }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mfaToken, setMfaToken] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,14 +20,28 @@ export default function Login({ setToken }) {
 
     try {
       const data = await login(email, password);
-      setAuthToken(data.token);
-      setToken(data.token);
+
+      if (data.mfaRequired) {
+        setMfaToken(data.mfaToken);
+      } else {
+        setAuthToken(data.token);
+        setToken(data.token);
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleMFASuccess = (data) => {
+    setAuthToken(data.token);
+    setToken(data.token);
+  };
+
+  if (mfaToken) {
+    return <MFAVerification mfaToken={mfaToken} onSuccess={handleMFASuccess} />;
+  }
 
   // Animation variants
   const containerVariants = {
@@ -146,7 +162,12 @@ export default function Login({ setToken }) {
         </form>
 
         <motion.div className="auth-footer" variants={itemVariants}>
-          Don't have an account? <Link to="/register">Register</Link>
+          <div>
+            Don't have an account? <Link to="/register">Register</Link>
+          </div>
+          <div style={{ marginTop: '10px' }}>
+            <Link to="/forgot-password">Forgot password?</Link>
+          </div>
         </motion.div>
       </motion.div>
     </div>

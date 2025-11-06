@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import './App.css';
 
 function App() {
@@ -33,6 +35,18 @@ function App() {
           path="/register"
           element={
             token ? <Navigate to="/" /> : <Register setToken={setToken} />
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            token ? <Navigate to="/" /> : <ForgotPassword />
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            token ? <Navigate to="/" /> : <ResetPassword />
           }
         />
         <Route
