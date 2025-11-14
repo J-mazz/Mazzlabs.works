@@ -378,7 +378,7 @@ export class APIServer {
         received_at: new Date().toISOString()
       };
 
-      this.emailManager.storeEmail(emailData);
+      this.emailManager.saveEmail(req.user.id, emailData);
 
       // Create nodemailer transport using our SMTP outgoing server
       // Note: For now, we'll send without SMTP auth since it's the same server

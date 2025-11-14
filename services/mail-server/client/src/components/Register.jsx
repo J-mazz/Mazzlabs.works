@@ -9,6 +9,8 @@ export default function Register({ setToken }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +31,7 @@ export default function Register({ setToken }) {
     setLoading(true);
 
     try {
-      const data = await register(email, password);
+      const data = await register(email, password, recoveryEmail || undefined, phoneNumber || undefined);
       setAuthToken(data.token);
       setToken(data.token);
     } catch (err) {
@@ -157,6 +159,32 @@ export default function Register({ setToken }) {
               required
               autoComplete="new-password"
             />
+          </motion.div>
+
+          <motion.div className="form-group" variants={itemVariants}>
+            <label htmlFor="recoveryEmail">Recovery Email (Optional)</label>
+            <input
+              id="recoveryEmail"
+              type="email"
+              value={recoveryEmail}
+              onChange={(e) => setRecoveryEmail(e.target.value)}
+              placeholder="backup@gmail.com"
+              autoComplete="email"
+            />
+            <small>External email for password recovery</small>
+          </motion.div>
+
+          <motion.div className="form-group" variants={itemVariants}>
+            <label htmlFor="phoneNumber">Phone Number (Optional)</label>
+            <input
+              id="phoneNumber"
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+1234567890"
+              autoComplete="tel"
+            />
+            <small>For SMS-based account recovery</small>
           </motion.div>
 
           <motion.button

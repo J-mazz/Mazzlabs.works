@@ -17,8 +17,13 @@ export const login = async (email, password) => {
   return response.data;
 };
 
-export const register = async (email, password) => {
-  const response = await api.post('/auth/register', { email, password });
+export const register = async (email, password, recoveryEmail, phoneNumber) => {
+  const response = await api.post('/auth/register', {
+    email,
+    password,
+    recoveryEmail,
+    phoneNumber
+  });
   return response.data;
 };
 
@@ -90,6 +95,36 @@ export const deleteEmail = async (id) => {
 export const searchEmails = async (query, mailbox = null) => {
   const response = await api.get('/emails/search', {
     params: { q: query, mailbox }
+  });
+  return response.data;
+};
+
+// Recovery Options
+export const setRecoveryEmail = async (recoveryEmail, password) => {
+  const response = await api.post('/users/recovery-email', {
+    recoveryEmail,
+    password
+  });
+  return response.data;
+};
+
+export const setPhoneNumber = async (phoneNumber, password) => {
+  const response = await api.post('/users/phone-number', {
+    phoneNumber,
+    password
+  });
+  return response.data;
+};
+
+// Admin Functions
+export const getAllUsers = async () => {
+  const response = await api.get('/admin/users');
+  return response.data;
+};
+
+export const adminResetPassword = async (userId, newPassword) => {
+  const response = await api.post(`/admin/users/${userId}/reset-password`, {
+    newPassword
   });
   return response.data;
 };
